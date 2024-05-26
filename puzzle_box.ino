@@ -2,6 +2,7 @@
 #include <MFRC522.h>           // include RFID reader library
 #include <FastLED.h>           // include FastLED Library
 #include <Adafruit_LIS3MDL.h>  // include Adafruit Magnetometer library
+#include <Adafruit_Sensor.h>
 #include <TinyGPSPlus.h>       // include GPS Data parsing library
 #include <DFPlayerMini_Fast.h> // include mp3 player library
 #include <Wire.h>
@@ -10,20 +11,23 @@
 
 // GLOBALS
 
-const int GPS_Baud = 9600;
-
-// Instantiate TinyGPS+ object
-TinyGPSPlus gps;
-// Define Objective Coords
-// const double Point1[] = { 47.422176222346536, -122.54161606046057 }; // OBM
-// const double Point2[] = { 47.5424255792486 , -122.6373545951069 };   // Merc
-
-const double Points[][2] = {{ 47.422176222346536, -122.54161606046057 }, 
-                            { 47.5424255792486, -122.6373545951069 },
-                            { 47.487875749473154, -122.61306548845718}};
+// Define GPS Points
+const double Points[][2] = {{ 47.422176222346536, -122.54161606046057 }, // OBM
+                            { 47.5424255792486, -122.6373545951069 },    // Merc
+                            { 47.487875749473154, -122.61306548845718}}; // random road north of home
 const int numPoints = 3;
 
-// define LED Ring sizes
+
+const int GPS_Baud = 9600;
+// Instantiate TinyGPS+ object
+TinyGPSPlus gps;
+
+// Set Compass pin
+Adafruit_LIS3MDL lis3mdl;
+const int LIS3MDL_PIN = 37;
+
+
+// Instantiate LED Rings
 const int NUM_LEDS = 93;
 // const int leds[] = {32, 24, 16, 12, 8, 1};
 const int LED_PIN = 2;
@@ -33,7 +37,11 @@ CRGB leds[NUM_LEDS];
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
   Serial7.begin(GPS_Baud);
+
+  lis3mdl.begin_SPI(LIS3MDL_PIN);
+  lis3mdl.setPerformanceMode(LIS3MDL_HIGHMODE);
 
   FastLED.addLeds<WS2812B, LED_PIN, RGB>(leds, NUM_LEDS);
   FastLED.setBrightness(10);
@@ -61,17 +69,26 @@ void loop() {
     ) / 1000.0;
     }
 
+    // read compass data
+    lis3mdl.read();
+    sensors_event_t event;
+    lis3mdl.getEvent(&event);
+    float curr_heading = atan2(event.magnetic.y, event.magnetic.x) * 180 / M_PI;
+    // float curr_heading = 0.0;
+    Serial.print("Heading: ");
+    Serial.println(curr_heading);
+
     // Calculate bearings of each Objective
 
     double bearings[numPoints];
 
     for (int i = 0; i < numPoints; i++) {
-      bearings[i] = calculateBearing(gps.location.lat(), gps.location.lng(), Points[i][0], Points[i][1]);
+      bearings[i] = calculateBearing(gps.location.lat(), gps.location.lng(), Points[i][0], Points[i][1], curr_heading);
     }
 
     // draw the map
     drawMap(distances, bearings);
-    delay(1000);
+    delay(300);
   }
 
 }
@@ -119,7 +136,7 @@ void drawMap(double distances[], double bearings[]) {
     leds[pointLed].setHue(huee);
     huee += 100;
   }
-
+  leds[92].setHue(200);
   FastLED.show();
 
 }
@@ -132,7 +149,7 @@ double degreesToRadians(double degrees) {
 }
 
 // Function to calculate the bearing from current location to target location
-double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
+double calculateBearing(double lat1, double lon1, double lat2, double lon2, float curr_heading) {
   // Convert latitude and longitude from degrees to radians
   lat1 = degreesToRadians(lat1);
   lon1 = degreesToRadians(lon1);
@@ -151,6 +168,9 @@ double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
 
   // Convert the bearing from radians to degrees
   double bearing = initialBearing * (180.0 / PI);
+
+  // adjust for current heading
+  bearing += curr_heading;
 
   // Normalize the bearing to a 0-360 range
   bearing = fmod((bearing + 360.0), 360.0);
