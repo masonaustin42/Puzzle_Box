@@ -48,9 +48,16 @@ void setup() {
 	while (!Serial);		// Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
 	SPI.begin();			// Init SPI bus
 	mfrc522.PCD_Init();		// Init MFRC522
-	delay(4);				// Optional delay. Some board do need more time after init to be ready, see Readme
+	delay(12);				// Optional delay. Some board do need more time after init to be ready, see Readme
 	mfrc522.PCD_DumpVersionToSerial();	// Show details of PCD - MFRC522 Card Reader details
 	Serial.println(F("Scan PICC to see UID, SAK, type, and data blocks..."));
+
+  // if (mfrc522.PCD_PerformSelfTest()){
+  //   Serial.println("Passed test");
+  // } else {
+  //   Serial.println("Failed test");
+  // }
+  // mfrc522.PCD_Init();
 }
 
 void loop() {
@@ -58,6 +65,8 @@ void loop() {
 	if ( ! mfrc522.PICC_IsNewCardPresent()) {
 		return;
 	}
+
+  Serial.println("Card is present");
 
 	// Select one of the cards
 	if ( ! mfrc522.PICC_ReadCardSerial()) {
@@ -70,6 +79,7 @@ void loop() {
   for (byte i = 0; i < mfrc522.uid.size; i++) {
     readRFID += String(mfrc522.uid.uidByte[i], HEX);
   }
+  Serial.println(readRFID);
   if (readRFID == "4f577f09f6180"){
     Serial.println("ACCESS GRANTED");
   } else {

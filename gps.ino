@@ -46,8 +46,5 @@ void displayGPSInfo()
     Serial.print(F("INVALID"));
   }
 
-  Serial.print(F("  Satellites:  "));
-  Serial.print(gps.satellites.value());
-
   Serial.println();
 }

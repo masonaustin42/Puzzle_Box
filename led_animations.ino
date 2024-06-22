@@ -1,12 +1,12 @@
 void ledPulsing() {
-  uint8_t tempHue = hue;
+  // uint8_t tempHue = hue;
 
   uint8_t i = map(beat8(60, 0), 0, 255, 20, 0);
   if (i == 5) {
-    leds[92] = CHSV(tempHue, 200, 255);
+    leds[92] = CHSV(PointHues[objective], 200, 255);
   } else if (i < 5) {
     for (int j = Rings[i][0]; j <= Rings[i][1]; j++) {
-      leds[j] = CHSV(tempHue, 200, 255);
+      leds[j] = CHSV(PointHues[objective], 200, 255);
     }
   }
   fadeToBlackBy(leds, NUM_LEDS, 4);
@@ -40,26 +40,24 @@ void ledSearching(bool spiral) {
 void ledPoints() {
   FastLED.clear();
 
-  for (int point = 0; point < numPoints; point++){
-    int selectedRing;
-    if (distances[point] > 2 && distances[point] <= 4) {
-      selectedRing = 4;
-    } else if (distances[point] > 4 && distances[point] <= 6) {
-      selectedRing = 3;
-    } else if (distances[point] > 6 && distances[point] <= 8) {
-      selectedRing = 2;
-    } else if (distances[point] > 8 && distances[point] <= 10) {
-      selectedRing = 1;
-    } else {
-      selectedRing = 0;
-    }
+  int selectedRing = 0;
+  if (distance > 0.1 && distance <= 1) {
+    selectedRing = 4;
+  } else if (distance > 1 && distance <= 2) {
+    selectedRing = 3;
+  } else if (distance > 2 && distance <= 3) {
+    selectedRing = 2;
+  } else if (distance > 3 && distance <= 4) {
+    selectedRing = 1;
+  } else {
+    selectedRing = 0;
+  }
 
     int offset = 0;
     for (int i = 0; i < selectedRing; i++) {
       offset += RingSizes[i];
     }
 
-    int pointLed = ((bearings[point] / 360) * RingSizes[selectedRing]) + offset;
-    leds[pointLed].setHue(PointHues[point]);
-  }
+    int pointLed = ((bearing / 360) * RingSizes[selectedRing]) + offset;
+    leds[pointLed].setHue(PointHues[objective]);
 }
