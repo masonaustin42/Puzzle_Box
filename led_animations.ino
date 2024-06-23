@@ -27,13 +27,6 @@ void ledSearching(bool spiral) {
   leds[ring5] = CHSV(85, saturation, 255);
   leds[92] = CHSV(85, saturation, 255);
 
-  // leds[ring1] = CRGB::Red;
-  // leds[ring2] = CRGB::Red;
-  // leds[ring3] = CRGB::Red;
-  // leds[ring4] = CRGB::Red;
-  // leds[ring5] = CRGB::Red;
-  // leds[92] = CRGB::Red;
-
   fadeToBlackBy(leds, NUM_LEDS, 3);
 }
 
@@ -60,4 +53,5 @@ void ledPoints() {
 
     int pointLed = ((bearing / 360) * RingSizes[selectedRing]) + offset;
     leds[pointLed].setHue(PointHues[objective]);
+    leds[92].setHue(hue);
 }

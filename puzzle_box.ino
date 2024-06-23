@@ -1,17 +1,14 @@
-// #include <SPI.h>               // include SPI bus library
-// #include <MFRC522.h>           // include RFID reader library
 #include <WS2812Serial.h>      // include library to use serial port on Teensy for neopixels
 #define USE_WS2812SERIAL
 #include <FastLED.h>           // include FastLED Library
-// #include <Adafruit_LIS3MDL.h>  // include Adafruit Magnetometer library
-// #include <Adafruit_Sensor.h>
 #include <TinyGPSPlus.h>       // include GPS Data parsing library
-// #include <DFPlayerMini_Fast.h> // include mp3 player library
 #include <Wire.h>
 #include <math.h>
 
-
 // GLOBALS
+
+// Uncomment to enable serial print statements
+#define DEBUG
 
 // Define GPS Points
 const double Points[][2] = {
@@ -30,7 +27,7 @@ const double Points[][2] = {
                             }; 
 const int numPoints = 4;
 int PointHues[] = {192, 64, 96, 160, 32, 210, 0};
-// uint8_t hue = 0;
+uint8_t hue = 0;
 int objective = 0;
 int timeAtObjective = 0;
 
@@ -43,11 +40,14 @@ bool GPSConnected = false;
 double bearing = 0;
 double distance = 100.0;
 
-// Instantiate DFPlayer
+// Instantiate DFPlayer trigger
 // DFPlayerMini_Fast MP3;
-// const uint8_t searchingTrack = 0;
-// const uint8_t foundTrack = 1;
-// const uint8_t objectiveTrack = 2;
+const uint8_t MP3_PIN_1 = 2;
+const uint8_t MP3_PIN_2 = 3;
+unsigned long MP3_1_Millis = 0;
+unsigned long MP3_2_Millis = 0;
+
+unsigned long currentMillis = 0;
 
 
 // Instantiate LED Rings
@@ -68,14 +68,17 @@ const int Ring6 = 92;
 void ledPoints();
 void ledPulsing();
 void ledSearching();
+void debugPrint();
+void debugPrintln();
 
 void setup() {
   // put your setup code here, to run once:
+  #ifdef DEBUG
   Serial.begin(9600);
+  #endif
 
-  Serial2.begin(9600);
-  // MP3.begin(Serial2);
-  // MP3.volume(30);
+  pinMode(MP3_PIN_1, OUTPUT);
+  pinMode(MP3_PIN_2, OUTPUT);
 
   Serial7.begin(GPS_Baud);
 
@@ -85,6 +88,9 @@ void setup() {
 }
 
 void loop() {
+  // update currentMillis value
+  currentMillis = millis();
+
   // read GPS data
   while (Serial7.available() > 0) {
     gps.encode(Serial7.read());
@@ -108,14 +114,16 @@ void loop() {
   drawMap(distance, bearing);
 
   // update global hue value 
-  // EVERY_N_MILLISECONDS(10) {
-  //   hue++;
-  // }
+  EVERY_N_MILLISECONDS(10) {
+    hue++;
+  }
 
   // check how long we've been at currently selected obj to select next one after 300 seconds
   EVERY_N_SECONDS(1) {
-    Serial.print("Time at current Objective: ");
-    Serial.println(timeAtObjective);
+    // debugPrint("Time at current Objective: ");
+    debugPrint("Time at current Objective: ");
+    // debugPrintln(timeAtObjective);
+    debugPrintln(timeAtObjective);
     if (timeAtObjective > 0 && timeAtObjective < 180) {
       timeAtObjective += 1;
     } else if (timeAtObjective >= 180) {
@@ -130,35 +138,33 @@ void loop() {
 // - Distance between self and current objective
 // - Bearing to objective
 void drawMap(double distance, double bearing) {
+  #ifdef DEBUG
   displayGPSInfo();
-
-  Serial.print("Objective Status: ");
+  #endif
+  
+  debugPrint("Objective Status: ");
   if (! gps.location.isValid()) {
-    Serial.println("GPS Searching...");
+    debugPrintln("GPS Searching...");
     ledSearching(false);
-    // if (! MP3.isPlaying()) {
-    //   MP3.play(searchingTrack);
-    // }
   } else if (distance < 0.1) {
-    Serial.println("Close to point");
+    debugPrintln("Close to point");
     ledPulsing();
     // set timeAtObjective to 1 once, only when arriving at objective
-    Serial.println(timeAtObjective);
+    debugPrintln(timeAtObjective);
     if (timeAtObjective < 1 || timeAtObjective > 300) {
       timeAtObjective = 1;
-      // MP3.play(objectiveTrack);
+      // play objective found mp3
+      digitalWrite(MP3_PIN_2, LOW);
       };
   } else {
-    Serial.println("Displaying points...");
+    debugPrintln("Displaying points...");
     ledPoints();
-    Serial.print("Bearing: ");
-    Serial.println(bearing);
-    Serial.print("Distance: ");
-    Serial.println(distance);
-    // if (! GPSConnected) {
-    //   MP3.play(foundTrack);
-    //   GPSConnected = true;
-    // }
+    debugPrint("Bearing: ");
+    debugPrintln(bearing);
+    debugPrint("Distance: ");
+    debugPrintln(distance);
+    // play next point mp3
+      digitalWrite(MP3_PIN_1, LOW);
   }
   
   FastLED.show();
@@ -196,3 +202,25 @@ double calculateBearing(double lat1, double lon1, double lat2, double lon2) {
   return bearing;
 }
 
+void updateMP3Pins(uint8_t pin) {
+  // Checks to set MP3 pins back to high if they have been low for 200 milliseconds
+  // Check pin #1 first
+  if (MP3_PIN_1 == LOW) {
+    // if it has been 200 millis since mp3 #1 was set high
+    if (currentMillis - MP3_1_Millis >= 200) {
+      digitalWrite(MP3_PIN_1, HIGH);
+    }
+  } else if (MP3_PIN_1 == HIGH) {
+    // update mp3 #1 value to current time
+    MP3_1_Millis = currentMillis;
+  }
+
+  // Same check for pin #2
+  if (MP3_PIN_2 == LOW) {
+    if (currentMillis - MP3_2_Millis >= 200) {
+      digitalWrite(MP3_PIN_2, HIGH);
+    }
+  } else if (MP3_PIN_2 == HIGH) {
+    MP3_2_Millis = currentMillis;
+  }
+}
