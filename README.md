@@ -1,6 +1,6 @@
 # Puzzle Box
 
-This puzzle box was created for my brother's bachelor party. The box displays a basic map on the LEDs on top, using a Teensy 4.1 microcontroller and an Arduino compatible GPS receiver. 
+This puzzle box was created for my brother's bachelor party. The box displays a basic map on the LEDs on top, using a Teensy 4.1 microcontroller and an Arduino-compatible GPS receiver. 
 The map updates in real-time, and helped navigate to different challenges that my brother had to complete to earn the codes to each of the different locks on the side of the box. The box cannot open until all 8 locks have been removed.
 This project took about a month to develop, and it was made entirely from scratch aside from using some Arduino libraries to control the LEDs and interface with the GPS unit.
 
@@ -14,3 +14,37 @@ This project took about a month to develop, and it was made entirely from scratc
 ## Video Demo
 
 https://github.com/user-attachments/assets/07382008-efad-4c62-b222-95e3310d10c2
+
+## Example Usage
+
+1. First, the device is powered on. Since the power switch is on the inside, this needs to be done before the locks are reinstalled.
+
+2. Eight locks are installed on the exterior of the box, keeping it closed.
+
+3. The GPS unit will look for a GPS signal. While the GPS is searching, the LEDs display a sweeping animation.
+
+4. The map will update with the GPS data, showing the user's location in the center and a single point for the first objective the user must navigate to. For example, if the user was located in Seattle, WA and the first point was in San Francisco, CA the map would show the next point at the bottom of the display, indicating that the user needs to travel south.
+
+5. The user then navigates to the point using the map. The map will continue to update as the user's location changes, displaying the relative location of the current objective, and getting closer to the center as the user approaches the destination.
+
+6. Once the user successfully navigates to the objective, the LEDs will display a pulsing animation indicating that the user has arrived. This animation will last 3 minutes before updating again. This gives the user time to complete a task to find a code for a lock.
+
+7. The display will then show the next objective. The user must repeat steps 4-6 for each objective.
+
+8. Once the last objective is reached, a final rainbow animation will play indefinitely, indicating there are no more objectives to find. The locks may be removed from the puzzle box and the device can be shut down.
+
+## Features
+
+- Live location updates
+- Custom animations
+- Customizable amount of locations
+- Battery Powered
+
+## Technology Used
+
+![Arduino](https://img.shields.io/badge/-Arduino-00979D?style=for-the-badge&logo=Arduino&logoColor=white) 
+![Teensy 4.1](https://img.shields.io/badge/Teensy_4.1-000080?style=for-the-badge)
+![C++](https://img.shields.io/badge/c++-%2300599C.svg?style=for-the-badge&logo=c%2B%2B&logoColor=white)
+![Bambu Labs](https://img.shields.io/badge/Bambu_Labs-00AE42?style=for-the-badge&logo=bambulab&logoColor=white)
+![Fusion 360](https://img.shields.io/badge/Fusion_360-FF7008?style=for-the-badge)
+
